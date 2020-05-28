@@ -12,10 +12,10 @@ variables:
   - group: deploymentOptions
  
   - name: resourceGroup
-    value: 'ftaiac-arm-rg'
+    value: 'aksdevops-arm-rg'
 
   - name: clusterName
-    value: 'akscluster-arm'
+    value: 'aksdevops-arm'
 
   - name:  region
     value: 'australiaeast'
@@ -25,11 +25,11 @@ variables:
 
   # to deploy application
   - name: isAppDeployment
-    value: false
+    value: true
 
   # to deploy infrastructure
   - name: isInfraDeployment
-    value: false
+    value: true
 
   # deployWith options 'arm','terraform','ansible'
   - name: deployWith
@@ -41,6 +41,12 @@ variables:
   # Agent VM image name
   - name: vmImageName
     value: 'ubuntu-latest'
+
+  - name: keyvaultRG
+    value: 'azninja-rg'
+
+  - name: keyvaultName
+    value: 'azninja'
 pool:
   vmImage: $(vmImageName)
 
@@ -58,7 +64,7 @@ stages:
         containerRegistry: 'azninja'
         repository: '$(imageRepository)'
         command: 'buildAndPush'
-        Dockerfile: '**/Dockerfile'
+        Dockerfile: 'apps/web/Dockerfile'
         tags: |
           $(Build.BuildId)
           latest
@@ -86,8 +92,8 @@ stages:
         resourceGroupName: $(resourceGroup)
         location: $(region)
         templateLocation: 'Linked artifact'
-        csmFile: '$(System.DefaultWorkingDirectory)/arm/template.json'
-        csmParametersFile: '$(System.DefaultWorkingDirectory)/arm/parameters.json'
+        csmFile: '$(System.DefaultWorkingDirectory)/infra/arm/template.json'
+        csmParametersFile: '$(System.DefaultWorkingDirectory)/infra/arm/parameters.json'
         overrideParameters: '-clusterName $(clusterName) -doRoleAssignment $(isInfraDeployment) -location $(region) -workspaceRegion $(region) -kubernetesVersion $(k8sVersion)'
         deploymentMode: 'Incremental'
 
@@ -99,7 +105,7 @@ stages:
     - task: qetza.replacetokens.replacetokens-task.replacetokens@3
       displayName: 'Replace tokens in **/*.tf'
       inputs:
-        rootDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        rootDirectory: '$(System.DefaultWorkingDirectory)/infra/terraform'
         targetFiles: '**/*.tf'
         escapeType: none
         tokenPrefix: '__'
@@ -108,7 +114,7 @@ stages:
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
       displayName: 'Terraform : azurerm init'
       inputs:
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/infra/terraform'
         backendServiceArm: 'Victor-DevOps'
         backendAzureRmResourceGroupName: 'terraform_rg'
         backendAzureRmStorageAccountName: wviriyatfstate
@@ -119,7 +125,7 @@ stages:
       displayName: 'Terraform : azurerm plan'
       inputs:
         command: plan
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/infra/terraform'
         environmentServiceNameAzureRM: 'Victor-DevOps'
         backendServiceArm: 'Victor-DevOps'
         backendAzureRmResourceGroupName: 'terraform_rg'
@@ -132,7 +138,7 @@ stages:
       displayName: 'Terraform : azurerm apply'
       inputs:
         command: apply
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/infra/terraform'
         commandOptions: '-auto-approve'
         environmentServiceNameAzureRM: 'Victor-DevOps'
         backendServiceArm: 'Victor-DevOps'
@@ -149,7 +155,7 @@ stages:
     - task: qetza.replacetokens.replacetokens-task.replacetokens@3
       displayName: 'Replace tokens in **/*.yml'
       inputs:
-        rootDirectory: '$(System.DefaultWorkingDirectory)/ansible'
+        rootDirectory: '$(System.DefaultWorkingDirectory)/infra/ansible'
         targetFiles: '**/*.yml'
         tokenPrefix: '__'
         tokenSuffix: '__'
@@ -161,7 +167,7 @@ stages:
         connectionOverSsh: ansiblevm
         playbookRootRemoteMachine: '$(System.DefaultWorkingDirectory)/ansible'
         playbookPathLinkedArtifactOnRemoteMachine: 'azure_create_aks.yml'
-        playbookPathOnAgentMachine: '$(System.DefaultWorkingDirectory)/ansible/azure_create_aks.yml'
+        playbookPathOnAgentMachine: '$(System.DefaultWorkingDirectory)/infra/ansible/azure_create_aks.yml'
         inventoriesRemoteMachine: hostList
         inventoryHostListRemoteMachine: wviriyaansible.australiaeast.cloudapp.azure.com
         args: '-vvv'
@@ -185,8 +191,21 @@ stages:
         azureSubscription: 'Victor-DevOps'
         scriptType: 'bash'
         scriptLocation: 'scriptPath'
-        scriptPath: '$(System.DefaultWorkingDirectory)/scripts/cluster_config.sh'
-        arguments: '$(subscriptionId) $(resourceGroup) $(clusterName)'
+        scriptPath: '$(System.DefaultWorkingDirectory)/infra/scripts/cluster_config.sh'
+        arguments: '$(subscriptionId) $(resourceGroup) $(clusterName) $(keyvaultRG) $(keyvaultName)'
+
+    - task: HelmDeploy@0
+      inputs:
+        connectionType: 'Azure Resource Manager'
+        azureSubscription: 'Victor-DevOps'
+        azureResourceGroup: '$(resourceGroup)'
+        kubernetesCluster: '$(clusterName)'
+        namespace: 'ingress-nginx'
+        command: 'upgrade'
+        chartType: 'FilePath'
+        chartPath: '$(System.DefaultworkingDirectory)/infra/ingress/charts/ingress-nginx'
+        releaseName: 'ingress-nginx'
+    
     
 - stage: test
   displayName: Deploy to test
@@ -209,7 +228,7 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+              chartPath: '$(Pipeline.Workspace)/artifacts/apps/web/charts/web'
               releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
               waitForExecution: false
        
@@ -234,7 +253,7 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+              chartPath: '$(Pipeline.Workspace)/artifacts/apps/web/charts/web'
               releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
               waitForExecution: false
 
@@ -259,7 +278,7 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+              chartPath: '$(Pipeline.Workspace)/artifacts/apps/web/charts/web'
               releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
               waitForExecution: false
             

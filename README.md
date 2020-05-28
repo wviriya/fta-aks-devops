@@ -13,3 +13,4 @@ How to deploy Azure Kubernetes Service using ARM Template, Terraform and Ansible
 - [Azure Active Directory pod identity](https://github.com/Azure/aad-pod-identity)
 - [Secrets Store CSI driver for Azure Key Vault](https://github.com/Azure/secrets-store-csi-driver-provider-azure)
 - [Azure Monitor for containers](https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-overview)
+- [Microsoft Cloud Workshop](https://github.com/microsoft/MCW-Cloud-native-applications)
