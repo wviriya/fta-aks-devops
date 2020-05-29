@@ -211,7 +211,7 @@ stages:
 
     - task: AzureCLI@2
       inputs:
-        azureSubscription: 'Azure CXP FTA Internal Subscription WVIRIYA(1)(c1a37f4e-c839-41b3-a627-5ea61b973cd1)'
+        azureSubscription: 'Victor-DevOps'
         scriptType: 'bash'
         scriptLocation: 'scriptPath'
         scriptPath: '$(System.DefaultWorkingDirectory)/infra/scripts/cluster_config.sh'
