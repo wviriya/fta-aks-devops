@@ -238,7 +238,7 @@ stages:
   jobs:
   - deployment: Deploy
     displayName: Deploy stage
-    environment: '$(clusterName).default'
+    environment: '$(clusterName)-default'
     strategy:
       runOnce:
         deploy:
