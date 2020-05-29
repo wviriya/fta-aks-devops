@@ -25,7 +25,7 @@ variables:
 
   # to deploy application
   - name: isAppDeployment
-    value: false
+    value: true
 
   # to deploy infrastructure
   - name: isInfraDeployment
@@ -33,7 +33,7 @@ variables:
 
   # to deploy infrastructure
   - name: isClusterConfig
-    value: true
+    value: false
 
   # deployWith options 'arm','terraform','ansible'
   - name: deployWith
