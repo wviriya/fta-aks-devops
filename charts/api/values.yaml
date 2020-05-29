@@ -24,7 +24,7 @@ serviceAccount:
 
 podLabels:
   k8s-app: api
-  aadpodidbinding: "akscluster-arm-agentpool" #"__clusterName__-agentpool"
+  aadpodidbinding: "__clusterName__-agentpool"
 
 podAnnotations: {}
 

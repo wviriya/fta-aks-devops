@@ -50,7 +50,7 @@ variables:
     value: 'azninja-rg'
 
   - name: keyvaultName
-    value: 'azninja'
+    value: 'azninja-kv'
 pool:
   vmImage: $(vmImageName)
 
@@ -83,6 +83,15 @@ stages:
         tags: |
           $(Build.BuildId)
           latest
+
+    - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+      displayName: 'Replace tokens in values.yaml'
+      inputs:
+        rootDirectory: '$(System.DefaultWorkingDirectory)/charts'
+        targetFiles: '**/values.yaml'
+        escapeType: none
+        tokenPrefix: '__'
+        tokenSuffix: '__'
 
     - task: PublishPipelineArtifact@1
       inputs:
@@ -244,8 +253,8 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/apps/web/charts/web'
-              releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
+              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+              releaseName: 'web-$(Environment.Name)'
               waitForExecution: false
 
           - task: HelmDeploy@0
@@ -258,8 +267,8 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/apps/api/charts/api'
-              releaseName: 'api-$(Environment.Name)-$(Build.BuildNumber)'
+              chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
+              releaseName: 'api-$(Environment.Name)'
               waitForExecution: false
        
 - stage: uat
@@ -284,8 +293,8 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/apps/web/charts/web'
-              releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
+              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+              releaseName: 'web-$(Environment.Name)'
               waitForExecution: false
 
           - task: HelmDeploy@0
@@ -298,8 +307,8 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/apps/api/charts/api'
-              releaseName: 'api-$(Environment.Name)-$(Build.BuildNumber)'
+              chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
+              releaseName: 'api-$(Environment.Name)'
               waitForExecution: false
 
 - stage: prod
@@ -324,8 +333,8 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/apps/web/charts/web'
-              releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
+              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+              releaseName: 'web-$(Environment.Name)'
               waitForExecution: false
               
           - task: HelmDeploy@0
@@ -338,7 +347,7 @@ stages:
               namespace: '$(Environment.Name)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/apps/api/charts/api'
-              releaseName: 'api-$(Environment.Name)-$(Build.BuildNumber)'
+              chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
+              releaseName: 'api-$(Environment.Name)'
               waitForExecution: false
             
