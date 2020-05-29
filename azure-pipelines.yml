@@ -12,10 +12,10 @@ variables:
   - group: deploymentOptions
  
   - name: resourceGroup
-    value: 'ftaiac-arm-rg'
+    value: 'aksdevops-rg'
 
   - name: clusterName
-    value: 'akscluster-arm'
+    value: 'aksdevops'
 
   - name:  region
     value: 'australiaeast'
@@ -29,11 +29,11 @@ variables:
 
   # to deploy infrastructure
   - name: isInfraDeployment
-    value: false
+    value: true
 
   # to deploy infrastructure
   - name: isClusterConfig
-    value: false
+    value: true
 
   # deployWith options 'arm','terraform','ansible'
   - name: deployWith
@@ -238,7 +238,7 @@ stages:
   jobs:
   - deployment: Deploy
     displayName: Deploy stage
-    environment: 'default'
+    environment: '$(clusterName).default'
     strategy:
       runOnce:
         deploy:
