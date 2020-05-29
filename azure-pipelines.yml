@@ -29,6 +29,10 @@ variables:
 
   # to deploy infrastructure
   - name: isInfraDeployment
+    value: false
+
+  # to deploy infrastructure
+  - name: isClusterConfig
     value: true
 
   # deployWith options 'arm','terraform','ansible'
@@ -191,7 +195,7 @@ stages:
     - DeployWithARM
     - DeployWithTerraform
     - DeployWithAnsible
-    condition: and(or(succeeded('DeployWithARM'),succeeded('DeployWithTerraform'),succeeded('DeployWithAnsible')),eq(variables.isInfraDeployment,true))
+    condition: and(or(succeeded('DeployWithARM'),succeeded('DeployWithTerraform'),succeeded('DeployWithAnsible')),eq(variables.isClusterConfig,true))
     steps:      
     - task: KubectlInstaller@0
       inputs:
