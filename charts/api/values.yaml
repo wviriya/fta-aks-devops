@@ -47,7 +47,7 @@ secretProvider:
   name: "azure-kv-store"
   enabled: true
   usePodIdentity: "true"          
-  keyVaultName: "azninja-kv"                            # the name of the KeyVault
+  keyVaultName: "__keyvaultName__"                            # the name of the KeyVault
   tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47"
   secretObject:   |
     array:
