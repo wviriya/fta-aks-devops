@@ -25,7 +25,7 @@ variables:
 
   # to deploy application
   - name: isAppDeployment
-    value: true
+    value: false
 
   # to deploy infrastructure
   - name: isInfraDeployment
@@ -195,7 +195,7 @@ stages:
     - DeployWithARM
     - DeployWithTerraform
     - DeployWithAnsible
-    condition: and(or(succeeded('DeployWithARM'),succeeded('DeployWithTerraform'),succeeded('DeployWithAnsible')),eq(variables.isClusterConfig,true))
+    condition: eq(variables.isClusterConfig,true)
     steps:      
     - task: KubectlInstaller@0
       inputs:
@@ -220,7 +220,7 @@ stages:
         chartType: 'FilePath'
         chartPath: '$(System.DefaultworkingDirectory)/infra/ingress/charts/ingress-nginx'
         releaseName: 'ingress-nginx'
-    
+  
     
 - stage: test
   displayName: Deploy to test
