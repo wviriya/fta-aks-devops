@@ -25,7 +25,7 @@ variables:
 
   # to deploy application
   - name: isAppDeployment
-    value: false
+    value: true
 
   # to deploy infrastructure
   - name: isInfraDeployment
@@ -190,18 +190,18 @@ stages:
   
 # Configure New Cluster
 - stage: Config
-  displayName: Configuring New AKS Cluster
+  displayName: Configure new AKS Cluster
   condition: eq(variables.isClusterConfig,true)
   dependsOn: Build
   jobs:
   - job: ConfigCluster
-    displayName: Config new AKS cluster
     steps:      
     - task: KubectlInstaller@0
       inputs:
         kubectlVersion: 'latest'
 
     - task: AzureCLI@2
+      displayName: Configure cluster
       inputs:
         azureSubscription: 'Victor-DevOps'
         scriptType: 'bash'
@@ -210,6 +210,7 @@ stages:
         arguments: '$(subscriptionId) $(resourceGroup) $(clusterName) $(keyvaultRG) $(keyvaultName)'
 
     - task: HelmDeploy@0
+      displayName: Deploy Nginx
       inputs:
         connectionType: 'Azure Resource Manager'
         azureSubscription: 'Victor-DevOps'
@@ -234,6 +235,7 @@ stages:
         deploy:
           steps:
           - task: HelmDeploy@0
+            displayName: Deploy Web
             inputs:
               connectionType: 'Azure Resource Manager'
               azureSubscription: 'Victor-DevOps'
@@ -247,6 +249,7 @@ stages:
               waitForExecution: false
 
           - task: HelmDeploy@0
+            displayName: Deploy API
             inputs:
               connectionType: 'Azure Resource Manager'
               azureSubscription: 'Victor-DevOps'
@@ -272,6 +275,7 @@ stages:
         deploy:
           steps:
           - task: HelmDeploy@0
+            displayName: Deploy Web
             inputs:
               connectionType: 'Azure Resource Manager'
               azureSubscription: 'Victor-DevOps'
@@ -285,6 +289,7 @@ stages:
               waitForExecution: false
 
           - task: HelmDeploy@0
+            displayName: Deploy API
             inputs:
               connectionType: 'Azure Resource Manager'
               azureSubscription: 'Victor-DevOps'
@@ -310,6 +315,7 @@ stages:
         deploy:
           steps:
           - task: HelmDeploy@0
+            displayName: Deploy Web
             inputs:
               connectionType: 'Azure Resource Manager'
               azureSubscription: 'Victor-DevOps'
@@ -323,6 +329,7 @@ stages:
               waitForExecution: false
               
           - task: HelmDeploy@0
+            displayName: Deploy API
             inputs:
               connectionType: 'Azure Resource Manager'
               azureSubscription: 'Victor-DevOps'
