@@ -25,7 +25,7 @@ variables:
 
   # to deploy application
   - name: isAppDeployment
-    value: true
+    value: false
 
   # to deploy infrastructure
   - name: isInfraDeployment
@@ -210,13 +210,13 @@ stages:
         kubectlVersion: 'latest'
 
     - task: AzureCLI@2
-      displayName: Configure cluster
       inputs:
-        azureSubscription: 'Victor-DevOps'
+        azureSubscription: 'Azure CXP FTA Internal Subscription WVIRIYA(1)(c1a37f4e-c839-41b3-a627-5ea61b973cd1)'
         scriptType: 'bash'
         scriptLocation: 'scriptPath'
         scriptPath: '$(System.DefaultWorkingDirectory)/infra/scripts/cluster_config.sh'
         arguments: '$(subscriptionId) $(resourceGroup) $(clusterName) $(keyvaultRG) $(keyvaultName)'
+        addSpnToEnvironment: true
 
     - task: HelmDeploy@0
       displayName: Deploy Nginx
