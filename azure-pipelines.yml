@@ -12,10 +12,10 @@ variables:
   - group: deploymentOptions
  
   - name: resourceGroup
-    value: 'aksdevops-arm-rg'
+    value: 'ftaiac-arm-rg'
 
   - name: clusterName
-    value: 'aksdevops-arm'
+    value: 'akscluster-arm'
 
   - name:  region
     value: 'australiaeast'
@@ -231,14 +231,14 @@ stages:
         chartPath: '$(System.DefaultworkingDirectory)/infra/ingress/charts/ingress-nginx'
         releaseName: 'ingress-nginx'
         
-- stage: test
+- stage: default
   displayName: Deploy to test
   dependsOn: Config
   condition: eq(variables.isAppDeployment,true)
   jobs:
   - deployment: Deploy
     displayName: Deploy stage
-    environment: 'test'
+    environment: 'default'
     strategy:
       runOnce:
         deploy:
@@ -271,83 +271,83 @@ stages:
               releaseName: 'api-$(Environment.Name)'
               waitForExecution: false
        
-- stage: uat
-  displayName: Deploy to uat
-  dependsOn: test
-  condition: and(succeeded(),eq(variables.isAppDeployment,true))
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy stage
-    environment: 'uat'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: HelmDeploy@0
-            displayName: Deploy Web
-            inputs:
-              connectionType: 'Azure Resource Manager'
-              azureSubscription: 'Victor-DevOps'
-              azureResourceGroup: '$(resourceGroup)'
-              kubernetesCluster: '$(clusterName)'
-              namespace: '$(Environment.Name)'
-              command: 'upgrade'
-              chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
-              releaseName: 'web-$(Environment.Name)'
-              waitForExecution: false
+# - stage: uat
+#   displayName: Deploy to uat
+#   dependsOn: test
+#   condition: and(succeeded(),eq(variables.isAppDeployment,true))
+#   jobs:
+#   - deployment: Deploy
+#     displayName: Deploy stage
+#     environment: 'uat'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: HelmDeploy@0
+#             displayName: Deploy Web
+#             inputs:
+#               connectionType: 'Azure Resource Manager'
+#               azureSubscription: 'Victor-DevOps'
+#               azureResourceGroup: '$(resourceGroup)'
+#               kubernetesCluster: '$(clusterName)'
+#               namespace: '$(Environment.Name)'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+#               releaseName: 'web-$(Environment.Name)'
+#               waitForExecution: false
 
-          - task: HelmDeploy@0
-            displayName: Deploy API
-            inputs:
-              connectionType: 'Azure Resource Manager'
-              azureSubscription: 'Victor-DevOps'
-              azureResourceGroup: '$(resourceGroup)'
-              kubernetesCluster: '$(clusterName)'
-              namespace: '$(Environment.Name)'
-              command: 'upgrade'
-              chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
-              releaseName: 'api-$(Environment.Name)'
-              waitForExecution: false
+#           - task: HelmDeploy@0
+#             displayName: Deploy API
+#             inputs:
+#               connectionType: 'Azure Resource Manager'
+#               azureSubscription: 'Victor-DevOps'
+#               azureResourceGroup: '$(resourceGroup)'
+#               kubernetesCluster: '$(clusterName)'
+#               namespace: '$(Environment.Name)'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
+#               releaseName: 'api-$(Environment.Name)'
+#               waitForExecution: false
 
-- stage: prod
-  displayName: Deploy to prod
-  dependsOn: uat
-  condition: and(succeeded(),eq(variables.isAppDeployment,true))
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy stage
-    environment: 'prod'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: HelmDeploy@0
-            displayName: Deploy Web
-            inputs:
-              connectionType: 'Azure Resource Manager'
-              azureSubscription: 'Victor-DevOps'
-              azureResourceGroup: '$(resourceGroup)'
-              kubernetesCluster: '$(clusterName)'
-              namespace: '$(Environment.Name)'
-              command: 'upgrade'
-              chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
-              releaseName: 'web-$(Environment.Name)'
-              waitForExecution: false
+# - stage: prod
+#   displayName: Deploy to prod
+#   dependsOn: uat
+#   condition: and(succeeded(),eq(variables.isAppDeployment,true))
+#   jobs:
+#   - deployment: Deploy
+#     displayName: Deploy stage
+#     environment: 'prod'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: HelmDeploy@0
+#             displayName: Deploy Web
+#             inputs:
+#               connectionType: 'Azure Resource Manager'
+#               azureSubscription: 'Victor-DevOps'
+#               azureResourceGroup: '$(resourceGroup)'
+#               kubernetesCluster: '$(clusterName)'
+#               namespace: '$(Environment.Name)'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+#               releaseName: 'web-$(Environment.Name)'
+#               waitForExecution: false
               
-          - task: HelmDeploy@0
-            displayName: Deploy API
-            inputs:
-              connectionType: 'Azure Resource Manager'
-              azureSubscription: 'Victor-DevOps'
-              azureResourceGroup: '$(resourceGroup)'
-              kubernetesCluster: '$(clusterName)'
-              namespace: '$(Environment.Name)'
-              command: 'upgrade'
-              chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
-              releaseName: 'api-$(Environment.Name)'
-              waitForExecution: false
+#           - task: HelmDeploy@0
+#             displayName: Deploy API
+#             inputs:
+#               connectionType: 'Azure Resource Manager'
+#               azureSubscription: 'Victor-DevOps'
+#               azureResourceGroup: '$(resourceGroup)'
+#               kubernetesCluster: '$(clusterName)'
+#               namespace: '$(Environment.Name)'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
+#               releaseName: 'api-$(Environment.Name)'
+#               waitForExecution: false
             
