@@ -49,11 +49,11 @@ helm install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver
 # Assign Reader Role to new Identity for your keyvault
 az role assignment create --role "Reader" --assignee $IDENTITY_CLIENT_ID --scope "/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${KV_RG}/providers/Microsoft.KeyVault/vaults/${KV_NAME}"
 # set policy to access keys in your keyvault
-az keyvault set-policy -n $KEYVAULT_NAME --key-permissions get --spn <YOUR AZURE USER IDENTITY CLIENT ID>
+az keyvault set-policy -n $KEYVAULT_NAME --key-permissions get --spn $IDENTITY_CLIENT_ID
 # set policy to access secrets in your keyvault
-az keyvault set-policy -n $KEYVAULT_NAME --secret-permissions get --spn <YOUR AZURE USER IDENTITY CLIENT ID>
+az keyvault set-policy -n $KEYVAULT_NAME --secret-permissions get --spn $IDENTITY_CLIENT_ID
 # set policy to access certs in your keyvault
-az keyvault set-policy -n $KEYVAULT_NAME --certificate-permissions get --spn <YOUR AZURE USER IDENTITY CLIENT ID>
+az keyvault set-policy -n $KEYVAULT_NAME --certificate-permissions get --spn $IDENTITY_CLIENT_ID
 
 cat <<EOF | kubectl apply -f -
 apiVersion: "aadpodidentity.k8s.io/v1"

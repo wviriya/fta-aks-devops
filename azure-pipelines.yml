@@ -57,7 +57,7 @@ pool:
 stages:
 - stage: Build
   displayName: Build
-  jobs:  
+  jobs:
   - job: BuildContainer
     displayName: Build container image
     condition: eq(variables.isAppDeployment,true)
@@ -96,7 +96,7 @@ stages:
   # Deploy with ARM
   - job: DeployWithARM
     displayName: Deploy to Azure wiht ARM
-    condition: and(eq(variables.deployWith,'arm'),eq(variables.isInfraDeployment,true))
+    condition: and(eq(variables.isInfraDeployment,true),eq(variables.deployWith,'arm'))
     steps:
     - task: AzureResourceManagerTemplateDeployment@3
       inputs:
@@ -115,7 +115,7 @@ stages:
   # Deploy with Terraform
   - job: DeployWithTerraform
     displayName: Deploy to Azure wiht Terraform
-    condition: and(eq(variables.deployWith,'terraform'),eq(variables.isInfraDeployment,true))
+    condition: and(eq(variables.isInfraDeployment,true),eq(variables.deployWith,'terraform'))
     steps:
     - task: qetza.replacetokens.replacetokens-task.replacetokens@3
       displayName: 'Replace tokens in **/*.tf'
@@ -165,7 +165,7 @@ stages:
   # Deploy with Ansible
   - job: DeployWithAnsible
     displayName: Deploy to Azure wiht Ansible
-    condition: and(eq(variables.deployWith,'ansible'),eq(variables.isInfraDeployment,true))
+    condition: and(eq(variables.isInfraDeployment,true),eq(variables.deployWith,'ansible'))
     steps:
     - task: qetza.replacetokens.replacetokens-task.replacetokens@3
       displayName: 'Replace tokens in **/*.yml'
@@ -187,15 +187,15 @@ stages:
         inventoryHostListRemoteMachine: wviriyaansible.australiaeast.cloudapp.azure.com
         args: '-vvv'
         failOnStdErr: false
-          
-  # Configure New Cluster      
+  
+# Configure New Cluster
+- stage: Config
+  displayName: Configuring New AKS Cluster
+  condition: eq(variables.isClusterConfig,true)
+  dependsOn: Build
+  jobs:
   - job: ConfigCluster
     displayName: Config new AKS cluster
-    dependsOn:
-    - DeployWithARM
-    - DeployWithTerraform
-    - DeployWithAnsible
-    condition: eq(variables.isClusterConfig,true)
     steps:      
     - task: KubectlInstaller@0
       inputs:
@@ -220,12 +220,11 @@ stages:
         chartType: 'FilePath'
         chartPath: '$(System.DefaultworkingDirectory)/infra/ingress/charts/ingress-nginx'
         releaseName: 'ingress-nginx'
-  
-    
+        
 - stage: test
   displayName: Deploy to test
-  dependsOn: Build
-  condition: and(succeeded(),eq(variables.isAppDeployment,true))
+  dependsOn: Config
+  condition: eq(variables.isAppDeployment,true)
   jobs:
   - deployment: Deploy
     displayName: Deploy stage
