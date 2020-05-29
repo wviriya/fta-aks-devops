@@ -30,7 +30,7 @@ spec:
               protocol: TCP
           env:
           - name: CONTENT_API_URL
-            value: http://52.255.63.17
+            value: http://10.0.147.69:3001
           livenessProbe:
             httpGet:
               path: /

@@ -1,27 +1,22 @@
-FROM node:alpine AS base
+FROM node:dubnium-alpine AS base
 RUN apk -U add curl
 WORKDIR /usr/src/app
 EXPOSE 3000
 
-FROM node:argon AS build
-WORKDIR /usr/src/app
+FROM node:dubnium AS build
+RUN npm install -g @angular/cli@~8.3.4
 
-# Need bower to install client side packages
-RUN npm install -g bower
+WORKDIR /usr/src/app
 
 # Install app dependencies
 COPY package.json /usr/src/app/
 RUN npm install
 
-# Install client side app dependencies
-COPY .bowerrc /usr/src/app
-COPY bower.json /usr/src/app
-RUN bower --allow-root install
-
 # Bundle app source
 COPY . /usr/src/app
+RUN ng build 
 
 FROM base as final
 WORKDIR /usr/src/app
 COPY --from=build /usr/src/app .
-CMD [ "npm", "start" ]
+CMD [ "node", "app.js" ]

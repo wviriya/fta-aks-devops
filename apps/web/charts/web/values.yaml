@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: azninja.azurecr.io/fabmedweb
+  repository: azninja.azurecr.io/aksweb
   tag: latest
   pullPolicy: Always
 

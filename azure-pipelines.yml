@@ -62,9 +62,20 @@ stages:
       displayName: Build and push an image to container registry
       inputs:
         containerRegistry: 'azninja'
-        repository: '$(imageRepository)'
+        repository: 'aksweb'
         command: 'buildAndPush'
         Dockerfile: 'apps/web/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        containerRegistry: 'azninja'
+        repository: 'aksapi'
+        command: 'buildAndPush'
+        Dockerfile: 'apps/api/Dockerfile'
         tags: |
           $(Build.BuildId)
           latest
@@ -231,6 +242,19 @@ stages:
               chartPath: '$(Pipeline.Workspace)/artifacts/apps/web/charts/web'
               releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
               waitForExecution: false
+
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: 'Victor-DevOps'
+              azureResourceGroup: '$(resourceGroup)'
+              kubernetesCluster: '$(clusterName)'
+              namespace: '$(Environment.Name)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/artifacts/apps/api/charts/api'
+              releaseName: 'api-$(Environment.Name)-$(Build.BuildNumber)'
+              waitForExecution: false
        
 - stage: uat
   displayName: Deploy to uat
@@ -257,6 +281,19 @@ stages:
               releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
               waitForExecution: false
 
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: 'Victor-DevOps'
+              azureResourceGroup: '$(resourceGroup)'
+              kubernetesCluster: '$(clusterName)'
+              namespace: '$(Environment.Name)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/artifacts/apps/api/charts/api'
+              releaseName: 'api-$(Environment.Name)-$(Build.BuildNumber)'
+              waitForExecution: false
+
 - stage: prod
   displayName: Deploy to prod
   dependsOn: uat
@@ -280,5 +317,18 @@ stages:
               chartType: 'FilePath'
               chartPath: '$(Pipeline.Workspace)/artifacts/apps/web/charts/web'
               releaseName: 'web-$(Environment.Name)-$(Build.BuildNumber)'
+              waitForExecution: false
+              
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: 'Victor-DevOps'
+              azureResourceGroup: '$(resourceGroup)'
+              kubernetesCluster: '$(clusterName)'
+              namespace: '$(Environment.Name)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/artifacts/apps/api/charts/api'
+              releaseName: 'api-$(Environment.Name)-$(Build.BuildNumber)'
               waitForExecution: false
             

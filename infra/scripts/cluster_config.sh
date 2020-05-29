@@ -9,6 +9,8 @@ KV_NAME=$5
 
 az aks get-credentials -n $CLUSTER_NAME -g $AKS_RESOURCE_GROUP
 
+kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
+
 for namespace in ${NAME_SPACES[@]}; do
      # create namespace
      kubectl create namespace $namespace
