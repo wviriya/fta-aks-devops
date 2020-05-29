@@ -21,7 +21,7 @@ done
 
 # Deploy aad-pod-identity
 helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
-helm install aad-pod-identity aad-pod-identity/aad-pod-identity
+helm upgrade aad-pod-identity aad-pod-identity/aad-pod-identity
 
 LOCATION="$(az aks show -g $AKS_RESOURCE_GROUP -n $CLUSTER_NAME --query location -otsv)"
 
