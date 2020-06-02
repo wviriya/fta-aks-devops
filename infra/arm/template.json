@@ -576,8 +576,32 @@
             "dependsOn": [
                "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
             ]
+        },
+        {
+            "condition": "[parameters('doRoleAssignment')]",
+            "name": "[concat(parameters('keyVaultName'),'/add')]",
+            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+            "apiVersion": "2019-09-01",
+            "properties": {
+                "accessPolicies": [
+                {
+                    "tenantId": "[subscription().tenantId]",
+                    "objectId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
+                    "permissions": {
+                    "keys": [
+                        "get"
+                    ],
+                    "secrets": [
+                        "get"
+                    ],
+                    "certificates": [
+                        "get"
+                    ]
+                    }
+                }
+                ]
+            }
         }
-        ///subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${KV_RG}/providers/Microsoft.KeyVault/vaults/${KV_NAME}
     ],
     "outputs": {
         "controlPlaneFQDN": {
