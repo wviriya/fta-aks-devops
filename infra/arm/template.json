@@ -129,14 +129,12 @@
         },
         "workspaceRegion": {
             "type": "string",
-            "defaultValue": "[resourceGroup().location]",
             "metadata": {
                 "description": "Specify the region for your OMS workspace."
             }
         },
         "omsResourceGroup": {
             "type": "string",
-            "defaultValue": "[resourceGroup().name]",
             "metadata": {
                 "description": "Specify the name for your OMS workspace."
             }
@@ -206,28 +204,7 @@
                 "description": "Enables the Linux ACI Connector."
             }
         },
-        "acrRAguid": {
-            "type": "string",
-            "defaultValue": "[newGuid()]",
-            "metadata": {
-                "description": "GUID for Role Assignment - DO NOT USE"
-            }
-        },
-        "omsRAguid": {
-            "type": "string",
-            "defaultValue": "[newGuid()]",
-            "metadata": {
-                "description": "GUID for Role Assignment - DO NOT USE"
-            }
-        },
-        "defualtSubnetRAguid": {
-            "type": "string",
-            "defaultValue": "[newGuid()]",
-            "metadata": {
-                "description": "GUID for Role Assignment - DO NOT USE"
-            }
-        },
-        "aciSubnetRAguid": {
+        "uniqueId": {
             "type": "string",
             "defaultValue": "[newGuid()]",
             "metadata": {
@@ -237,13 +214,13 @@
         "keyVaultResourceGroup": {
             "type": "string",
             "metadata": {
-                "description": "GUID for Role Assignment - DO NOT USE"
+                "description": "Key Vault Resourec Group that cluster can access"
             }
         },
         "keyVaultName": {
             "type": "string",
             "metadata": {
-                "description": "GUID for Role Assignment - DO NOT USE"
+                "description": "Key Vault name that cluster can access"
             }
         },
         "doRoleAssignment": {
@@ -255,9 +232,10 @@
         }
     },
     "variables": {
-        "workspaceName": "[if(empty(parameters('workspaceName')),concat(parameters('clusterName'),'Workspace',guid(resourceGroup().id)),parameters('workspaceName'))]",
-        "omsWorkspaceId": "[resourceId(parameters('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]",
-        "MCResourceGroup": "[concat('MC_',resourceGroup().name,'_',parameters('clusterName'),'_',parameters('location'))]",
+        "omsResourceGroup":"[if(empty(parameters('omsResourceGroup')),parameters('resourceGroupName'),parameters('omsResourceGroup'))]",
+        "workspaceName": "[if(empty(parameters('workspaceName')),concat(parameters('clusterName'),'Workspace',guid(parameters('uniqueId'))),parameters('workspaceName'))]",
+        "omsWorkspaceId": "[resourceId(variables('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]",
+        "MCResourceGroup": "[concat('MC_',parameters('resourceGroupName'),'_',parameters('clusterName'),'_',parameters('location'))]",
         "Reader": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
         "MonitoringPublisher": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/3913510d-42f4-4e42-8a64-420c390055eb')]",
         "Contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c')]",
@@ -295,7 +273,7 @@
                         "storageProfile": "ManagedDisks",
                         "type": "[if(parameters('vmssNodePool'),'VirtualMachineScaleSets','AvailabilitySet')]",
                         "mode": "System",
-                        "vnetSubnetID": "[concat(resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks',parameters('vnetName')),'/subnets/default')]"
+                        "vnetSubnetID": "[concat(resourceId(parameters('resourceGroupName'),'Microsoft.Network/virtualNetworks',parameters('vnetName')),'/subnets/default')]"
                     }
                 ],
                 "networkProfile": {
@@ -360,7 +338,7 @@
                         {
                             "apiVersion": "2015-11-01-preview",
                             "type": "Microsoft.OperationsManagement/solutions",
-                            "location": "[parameters('workspaceRegion')]",
+                            "location": "[if(empty(parameters('workspaceRegion')),parameters('location'),parameters('workspaceRegion'))]",
                             "name": "[concat('ContainerInsights', '(', split(variables('omsWorkspaceId'),'/')[8], ')')]",
                             "properties": {
                                 "workspaceResourceId": "[variables('omsWorkspaceId')]"
@@ -376,7 +354,7 @@
                 }
             },
             "dependsOn": [
-                "[resourceId(parameters('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]"
+                "[resourceId(variables('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]"
             ]
         },
         {
@@ -415,7 +393,7 @@
             "type": "Microsoft.Resources/deployments",
             "name": "ClusterMonitoringRoleAssigment",
             "apiVersion": "2019-10-01",
-            "resourceGroup": "[resourceGroup().name]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
             "properties": {
                 "mode": "Incremental",
                 "template": {
@@ -432,7 +410,7 @@
                                 "mode": "Incremental",
                                 "roleDefinitionId": "[variables('MonitoringPublisher')]",
                                 "principalId": "[reference(parameters('clusterName')).addonProfiles.omsagent.identity.objectId]",
-                                "scope": "[resourceId(resourceGroup().name, 'Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
+                                "scope": "[resourceId(parameters('resourceGroupName'), 'Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
                             }
                         }
                     ]
@@ -486,7 +464,7 @@
             "type": "Microsoft.Resources/deployments",
             "name": "ClusterSubnetRoleAssignmentDeployment",
             "apiVersion": "2019-10-01",
-            "resourceGroup": "[resourceGroup().name]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
             "properties": {
                 "mode": "Incremental",
                 "template": {
@@ -503,7 +481,7 @@
                                 "mode": "Incremental",
                                 "roleDefinitionId": "[variables('NetworkContributor')]",
                                 "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
-                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/virtualNetworks/',parameters('vnetName'),'/subnets/default')]"
+                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.Network/virtualNetworks/',parameters('vnetName'),'/subnets/default')]"
                             }
                         }
                     ]
@@ -518,7 +496,7 @@
             "type": "Microsoft.Resources/deployments",
             "name": "AciSubnetRoleAssignmentDeployment",
             "apiVersion": "2019-10-01",
-            "resourceGroup": "[resourceGroup().name]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
             "properties": {
                 "mode": "Incremental",
                 "template": {
@@ -535,7 +513,7 @@
                                 "mode": "Incremental",
                                 "roleDefinitionId": "[variables('NetworkContributor')]",
                                 "principalId": "[reference(parameters('clusterName')).addonProfiles.aciConnectorLinux.identity.objectId]",
-                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/virtualNetworks/',parameters('vnetName'),'/subnets/virtual-node-aci')]"
+                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.Network/virtualNetworks/',parameters('vnetName'),'/subnets/virtual-node-aci')]"
                             }
                         }
                     ]
@@ -549,7 +527,7 @@
             "condition": "[parameters('doRoleAssignment')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2018-09-01-preview",
-            "name": "[guid(resourceGroup().id, 'Managed Identity Operator')]",
+            "name": "[guid(parameters('uniqueId'), 'Managed Identity Operator')]",
             "properties": {
                 "mode": "Incremental",
                 "roleDefinitionId": "[variables('ManagedIdOperator')]",
@@ -564,7 +542,7 @@
             "condition": "[parameters('doRoleAssignment')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2018-09-01-preview",
-            "name": "[guid(resourceGroup().id, 'Virtual Machine Contributor')]",
+            "name": "[guid(parameters('uniqueId'), 'Virtual Machine Contributor')]",
             "properties": {
                 "mode": "Incremental",
                 "roleDefinitionId": "[variables('VMContributor')]",
@@ -579,7 +557,7 @@
             "condition": "[parameters('doRoleAssignment')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2018-09-01-preview",
-            "name": "[guid(resourceGroup().id, parameters('keyVaultName'))]",
+            "name": "[guid(parameters('uniqueId'), parameters('keyVaultName'))]",
             "properties": {
                 "mode": "Incremental",
                 "roleDefinitionId": "[variables('Reader')]",
