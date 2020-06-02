@@ -536,7 +536,7 @@
             "condition": "[parameters('doRoleAssignment')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2018-09-01-preview",
-            "name": "managedIdOperatorAssignment",
+            "name": "[concat(variables('MCResourceGroup'),'/Microsoft.Authorization/',guid(resourceGroup().id, deployment().name))]",
             "properties": {
                 "mode": "Incremental",
                 "roleDefinitionId": "[variables('ManagedIdOperator')]",
@@ -551,7 +551,7 @@
             "condition": "[parameters('doRoleAssignment')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2018-09-01-preview",
-            "name": "vmContributorAssignment",
+            "name": "[concat(variables('MCResourceGroup'),'/Microsoft.Authorization/',guid(resourceGroup().id, deployment().name))]",
             "properties": {
                 "mode": "Incremental",
                 "roleDefinitionId": "[variables('VMContributor')]",
@@ -566,7 +566,7 @@
             "condition": "[parameters('doRoleAssignment')]",
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "2018-09-01-preview",
-            "name": "keyVaultReaderAssignment",
+            "name": "[concat(parameters('keyVaultName'),'/Microsoft.Authorization/',guid(resourceGroup().id, deployment().name))]",
             "properties": {
                 "mode": "Incremental",
                 "roleDefinitionId": "[variables('Reader')]",
