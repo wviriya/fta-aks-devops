@@ -15,7 +15,7 @@
             "value": "Standard_DS2_v2"
         },
         "nodeNumber": {
-            "value": 2
+            "value": 3
         },
         "networkPlugin": {
             "value": "azure"
