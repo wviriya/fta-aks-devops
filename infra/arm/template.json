@@ -261,6 +261,7 @@
             "type": "Microsoft.ContainerService/managedClusters",
             "location": "[parameters('location')]",
             "name": "[parameters('clusterName')]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
             "properties": {
                 "kubernetesVersion": "[parameters('kubernetesVersion')]",
                 "enableRBAC": "[parameters('enableRBAC')]",
@@ -316,6 +317,7 @@
             "condition": "[not(equals(variables('workspaceName'),parameters('workspaceName')))]",
             "apiVersion": "2015-11-01-preview",
             "name": "[variables('workspaceName')]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
             "location": "[parameters('location')]",
             "type": "Microsoft.OperationalInsights/workspaces",
             "properties": {
@@ -425,6 +427,7 @@
         {
             "apiVersion": "2019-09-01",
             "name": "[parameters('vnetName')]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
             "type": "Microsoft.Network/virtualNetworks",
             "location": "[parameters('location')]",
             "properties": {
