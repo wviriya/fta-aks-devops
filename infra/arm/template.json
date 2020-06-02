@@ -227,6 +227,18 @@
                 "description": "GUID for Role Assignment - DO NOT USE"
             }
         },
+        "keyVaultResourceGroup": {
+            "type": "string",
+            "metadata": {
+                "description": "GUID for Role Assignment - DO NOT USE"
+            }
+        },
+        "keyVaultName": {
+            "type": "string",
+            "metadata": {
+                "description": "GUID for Role Assignment - DO NOT USE"
+            }
+        },
         "doRoleAssignment": {
             "type": "bool",
             "defaultValue": false,
@@ -237,7 +249,14 @@
     },
     "variables": {
         "workspaceName": "[if(empty(parameters('workspaceName')),concat(parameters('clusterName'),'Workspace',guid(resourceGroup().id)),parameters('workspaceName'))]",
-        "omsWorkspaceId": "[resourceId(parameters('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]"
+        "omsWorkspaceId": "[resourceId(parameters('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]",
+        "MCResourceGroup": "[concat('MC_',resourceGroup().name,'_',parameters('clusterName'),'_',parameters('location'))]",
+        "Reader": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
+        "MonitoringPublisher": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/3913510d-42f4-4e42-8a64-420c390055eb')]",
+        "Contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "NetworkContributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/4d97b98b-1d4f-4787-a291-c67834d212e7')]",
+        "ManagedIdOperator": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/f1a07417-d97a-45cb-824c-7a7467783830')]",
+        "VMContributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/9980e02c-c2be-4d73-94e8-173b1dc7cf3c')]"
     },
     "resources": [
         {
@@ -370,7 +389,7 @@
                                 "mode": "Incremental",
                                 "principalId": "[reference(parameters('clusterName'), '2020-03-01').identityProfile.kubeletidentity.objectId]",
                                 "principalType": "ServicePrincipal",
-                                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+                                "roleDefinitionId": "[variables('Contributor')]",
                                 "scope": "[resourceId(parameters('acrResourceGroup'), 'Microsoft.ContainerRegistry/registries', parameters('acrName'))]"
                             }
                         }
@@ -398,7 +417,7 @@
                             "name": "[concat(parameters('clusterName'), '/Microsoft.Authorization/',parameters('omsRAguid'))]",
                             "properties": {
                                 "mode": "Incremental",
-                                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '3913510d-42f4-4e42-8a64-420c390055eb')]",
+                                "roleDefinitionId": "[variables('MonitoringPublisher')]",
                                 "principalId": "[reference(parameters('clusterName')).addonProfiles.omsagent.identity.objectId]",
                                 "scope": "[resourceId(resourceGroup().name, 'Microsoft.ContainerService/managedClusters', parameters('clusterName'))]"
                             }
@@ -469,7 +488,7 @@
                             "name": "[concat(parameters('vnetName'),'/default/Microsoft.Authorization/',parameters('defualtSubnetRAguid'))]",
                             "properties": {
                                 "mode": "Incremental",
-                                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '4d97b98b-1d4f-4787-a291-c67834d212e7')]",
+                                "roleDefinitionId": "[variables('NetworkContributor')]",
                                 "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
                                 "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/virtualNetworks/',parameters('vnetName'),'/subnets/default')]"
                             }
@@ -501,7 +520,7 @@
                             "name": "[concat(parameters('vnetName'),'/virtual-node-aci/Microsoft.Authorization/',parameters('aciSubnetRAguid'))]",
                             "properties": {
                                 "mode": "Incremental",
-                                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '4d97b98b-1d4f-4787-a291-c67834d212e7')]",
+                                "roleDefinitionId": "[variables('NetworkContributor')]",
                                 "principalId": "[reference(parameters('clusterName')).addonProfiles.aciConnectorLinux.identity.objectId]",
                                 "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/virtualNetworks/',parameters('vnetName'),'/subnets/virtual-node-aci')]"
                             }
@@ -512,7 +531,53 @@
             "dependsOn": [
                 "[concat('Microsoft.Network/virtualNetworks/',parameters('vnetName'))]"
             ]
+        },
+        {
+            "condition": "[parameters('doRoleAssignment')]",
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2018-09-01-preview",
+            "name": "managedIdOperatorAssignment",
+            "properties": {
+                "mode": "Incremental",
+                "roleDefinitionId": "[variables('ManagedIdOperator')]",
+                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
+                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',variables('MCResourceGroup'))]"
+            },
+            "dependsOn": [
+               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
+            ]
+        },
+        {
+            "condition": "[parameters('doRoleAssignment')]",
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2018-09-01-preview",
+            "name": "vmContributorAssignment",
+            "properties": {
+                "mode": "Incremental",
+                "roleDefinitionId": "[variables('VMContributor')]",
+                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
+                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',variables('MCResourceGroup'))]"
+            },
+            "dependsOn": [
+               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
+            ]
+        },
+        {
+            "condition": "[parameters('doRoleAssignment')]",
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2018-09-01-preview",
+            "name": "vmContributorAssignment",
+            "properties": {
+                "mode": "Incremental",
+                "roleDefinitionId": "[variables('Reader')]",
+                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
+                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'),'/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+            },
+            "dependsOn": [
+               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
+            ]
         }
+        ///subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${KV_RG}/providers/Microsoft.KeyVault/vaults/${KV_NAME}
     ],
     "outputs": {
         "controlPlaneFQDN": {

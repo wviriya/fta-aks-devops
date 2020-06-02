@@ -12,10 +12,10 @@ variables:
   - group: deploymentOptions
  
   - name: resourceGroup
-    value: 'azninja-aks-rg'
+    value: 'aks-arm-rg'
 
   - name: clusterName
-    value: 'azninja-aks'
+    value: 'aks-arm'
 
   - name:  region
     value: 'australiaeast'

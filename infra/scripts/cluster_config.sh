@@ -30,8 +30,8 @@ RESOURCE_GROUP="MC_${AKS_RESOURCE_GROUP}_${CLUSTER_NAME}_${LOCATION}"
 IDENTITY_CLIENT_ID="$(az identity show -g $RESOURCE_GROUP -n $IDENTITY_NAME --subscription $SUBSCRIPTION_ID --query clientId -otsv)"
 IDENTITY_RESOURCE_ID="$(az identity show -g $RESOURCE_GROUP -n $IDENTITY_NAME --subscription $SUBSCRIPTION_ID --query id -otsv)"
 
-az role assignment create --role "Managed Identity Operator" --assignee $IDENTITY_CLIENT_ID --scope "/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${RESOURCE_GROUP}"
-az role assignment create --role "Virtual Machine Contributor" --assignee $IDENTITY_CLIENT_ID --scope "/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${RESOURCE_GROUP}"
+#az role assignment create --role "Managed Identity Operator" --assignee $IDENTITY_CLIENT_ID --scope "/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${RESOURCE_GROUP}"
+#az role assignment create --role "Virtual Machine Contributor" --assignee $IDENTITY_CLIENT_ID --scope "/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${RESOURCE_GROUP}"
 
 ###########################################################################################################
 # End config AAD Pod Identity
@@ -47,13 +47,13 @@ helm repo add secrets-store-csi-driver https://raw.githubusercontent.com/kuberne
 helm install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver
 
 # Assign Reader Role to new Identity for your keyvault
-az role assignment create --role "Reader" --assignee $IDENTITY_CLIENT_ID --scope "/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${KV_RG}/providers/Microsoft.KeyVault/vaults/${KV_NAME}"
+#az role assignment create --role "Reader" --assignee $IDENTITY_CLIENT_ID --scope "/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${KV_RG}/providers/Microsoft.KeyVault/vaults/${KV_NAME}"
 # set policy to access keys in your keyvault
-az keyvault set-policy -n $KV_NAME --key-permissions get --spn $IDENTITY_CLIENT_ID
+#az keyvault set-policy -n $KV_NAME --key-permissions get --spn $IDENTITY_CLIENT_ID
 # set policy to access secrets in your keyvault
-az keyvault set-policy -n $KV_NAME --secret-permissions get --spn $IDENTITY_CLIENT_ID
+#az keyvault set-policy -n $KV_NAME --secret-permissions get --spn $IDENTITY_CLIENT_ID
 # set policy to access certs in your keyvault
-az keyvault set-policy -n $KV_NAME --certificate-permissions get --spn $IDENTITY_CLIENT_ID
+#az keyvault set-policy -n $KV_NAME --certificate-permissions get --spn $IDENTITY_CLIENT_ID
 
 cat <<EOF | kubectl apply -f -
 apiVersion: "aadpodidentity.k8s.io/v1"

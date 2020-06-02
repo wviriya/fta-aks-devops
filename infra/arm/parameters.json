@@ -55,6 +55,12 @@
         },
         "acrResourceGroup": {
             "value": "azninja-rg"
+        },
+        "keyVaultResourceGroup": {
+            "value": "azninja-rg"
+        },
+        "keyVaultName": {
+            "value": "azninja-kv"
         }
     }
 }
