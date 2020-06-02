@@ -12,10 +12,10 @@ variables:
   - group: deploymentOptions
  
   - name: resourceGroup
-    value: 'aksdevops-rg'
+    value: 'azninja-aks-rg'
 
   - name: clusterName
-    value: 'aksdevops'
+    value: 'azninja-aks'
 
   - name:  region
     value: 'australiaeast'
@@ -25,11 +25,11 @@ variables:
 
   # to deploy application
   - name: isAppDeployment
-    value: true
+    value: false
 
   # to deploy infrastructure
   - name: isInfraDeployment
-    value: false
+    value: true
 
   # to deploy infrastructure
   - name: isClusterConfig

@@ -1,0 +1,36 @@
+export IDENTITY_NAME=aksdevops-agentpool
+export SUBSCRIPTION_ID=c1a37f4e-c839-41b3-a627-5ea61b973cd1
+export IDENTITY_CLIENT_ID=226e4a72-6e30-4369-a0f1-64d1f761600f
+export RESOURCE_GROUP=MC_aksdevops-rg_aksdevops_australiaeast
+
+cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+  labels:
+    aadpodidbinding: $IDENTITY_NAME
+spec:
+  containers:
+  - name: demo
+    image: mcr.microsoft.com/k8s/aad-pod-identity/demo:1.2
+    args:
+      - --subscriptionid=$SUBSCRIPTION_ID
+      - --clientid=$IDENTITY_CLIENT_ID
+      - --resourcegroup=$RESOURCE_GROUP
+    env:
+      - name: MY_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      - name: MY_POD_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+  nodeSelector:
+    kubernetes.io/os: linux
+EOF
