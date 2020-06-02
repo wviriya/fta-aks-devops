@@ -254,75 +254,103 @@
             "properties": {}
         },
         {
-            "apiVersion": "2020-03-01",
-            "dependsOn": [
-                "[concat('Microsoft.Network/virtualNetworks/',parameters('vnetName'))]"
-            ],
-            "type": "Microsoft.ContainerService/managedClusters",
-            "location": "[parameters('location')]",
-            "name": "[parameters('clusterName')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "AKSCluster",
+            "apiVersion": "2019-10-01",
             "resourceGroup": "[parameters('resourceGroupName')]",
             "properties": {
-                "kubernetesVersion": "[parameters('kubernetesVersion')]",
-                "enableRBAC": "[parameters('enableRBAC')]",
-                "dnsPrefix": "[parameters('dnsPrefix')]",
-                "agentPoolProfiles": [
-                    {
-                        "name": "agentpool",
-                        "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
-                        "count": "[parameters('nodeNumber')]",
-                        "vmSize": "[parameters('nodeSize')]",
-                        "osType": "Linux",
-                        "storageProfile": "ManagedDisks",
-                        "type": "[if(parameters('vmssNodePool'),'VirtualMachineScaleSets','AvailabilitySet')]",
-                        "mode": "System",
-                        "vnetSubnetID": "[concat(resourceId(parameters('resourceGroupName'),'Microsoft.Network/virtualNetworks',parameters('vnetName')),'/subnets/default')]"
-                    }
-                ],
-                "networkProfile": {
-                    "loadBalancerSku": "standard",
-                    "networkPlugin": "[parameters('networkPlugin')]",
-                    "networkPolicy": "[parameters('networkPolicy')]",
-                    "serviceCidr": "[parameters('serviceCidr')]",
-                    "dnsServiceIP": "[parameters('dnsServiceIP')]",
-                    "dockerBridgeCidr": "[parameters('dockerBridgeCidr')]"
-                },
-                "apiServerAccessProfile": {
-                    "enablePrivateCluster": "[parameters('enablePrivateCluster')]"
-                },
-                "addonProfiles": {
-                    "httpApplicationRouting": {
-                        "enabled": "[parameters('enableHttpApplicationRouting')]"
-                    },
-                    "omsagent": {
-                        "enabled": "[parameters('enableOmsAgent')]",
-                        "config": {
-                            "logAnalyticsWorkspaceResourceID": "[variables('omsWorkspaceId')]"
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "apiVersion": "2020-03-01",
+                            "type": "Microsoft.ContainerService/managedClusters",
+                            "location": "[parameters('location')]",
+                            "name": "[parameters('clusterName')]",
+                            "properties": {
+                                "kubernetesVersion": "[parameters('kubernetesVersion')]",
+                                "enableRBAC": "[parameters('enableRBAC')]",
+                                "dnsPrefix": "[parameters('dnsPrefix')]",
+                                "agentPoolProfiles": [
+                                    {
+                                        "name": "agentpool",
+                                        "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
+                                        "count": "[parameters('nodeNumber')]",
+                                        "vmSize": "[parameters('nodeSize')]",
+                                        "osType": "Linux",
+                                        "storageProfile": "ManagedDisks",
+                                        "type": "[if(parameters('vmssNodePool'),'VirtualMachineScaleSets','AvailabilitySet')]",
+                                        "mode": "System",
+                                        "vnetSubnetID": "[concat(resourceId(parameters('resourceGroupName'),'Microsoft.Network/virtualNetworks',parameters('vnetName')),'/subnets/default')]"
+                                    }
+                                ],
+                                "networkProfile": {
+                                    "loadBalancerSku": "standard",
+                                    "networkPlugin": "[parameters('networkPlugin')]",
+                                    "networkPolicy": "[parameters('networkPolicy')]",
+                                    "serviceCidr": "[parameters('serviceCidr')]",
+                                    "dnsServiceIP": "[parameters('dnsServiceIP')]",
+                                    "dockerBridgeCidr": "[parameters('dockerBridgeCidr')]"
+                                },
+                                "apiServerAccessProfile": {
+                                    "enablePrivateCluster": "[parameters('enablePrivateCluster')]"
+                                },
+                                "addonProfiles": {
+                                    "httpApplicationRouting": {
+                                        "enabled": "[parameters('enableHttpApplicationRouting')]"
+                                    },
+                                    "omsagent": {
+                                        "enabled": "[parameters('enableOmsAgent')]",
+                                        "config": {
+                                            "logAnalyticsWorkspaceResourceID": "[variables('omsWorkspaceId')]"
+                                        }
+                                    },
+                                    "aciConnectorLinux": {
+                                        "enabled": "[parameters('aciConnectorLinuxEnabled')]",
+                                        "config": {
+                                            "SubnetName": "virtual-node-aci"
+                                        }
+                                    }
+                                }
+                            },
+                            "tags": {},
+                            "identity": {
+                                "type": "SystemAssigned"
+                            }
                         }
-                    },
-                    "aciConnectorLinux": {
-                        "enabled": "[parameters('aciConnectorLinuxEnabled')]",
-                        "config": {
-                            "SubnetName": "virtual-node-aci"
-                        }
-                    }
+                    ]
                 }
             },
-            "tags": {},
-            "identity": {
-                "type": "SystemAssigned"
-            }
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/',parameters('vnetName'))]"
+            ]
         },
         {
             "condition": "[not(equals(variables('workspaceName'),parameters('workspaceName')))]",
-            "apiVersion": "2015-11-01-preview",
-            "name": "[variables('workspaceName')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "OMSWorkSpace",
+            "apiVersion": "2019-10-01",
             "resourceGroup": "[parameters('resourceGroupName')]",
-            "location": "[parameters('location')]",
-            "type": "Microsoft.OperationalInsights/workspaces",
             "properties": {
-                "sku": {
-                    "name": "[parameters('omsSku')]"
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "apiVersion": "2015-11-01-preview",
+                            "name": "[variables('workspaceName')]",
+                            "location": "[parameters('location')]",
+                            "type": "Microsoft.OperationalInsights/workspaces",
+                            "properties": {
+                                "sku": {
+                                    "name": "[parameters('omsSku')]"
+                                }
+                            }
+                        }
+                    ]
                 }
             }
         },
@@ -330,14 +358,16 @@
             "type": "Microsoft.Resources/deployments",
             "name": "OMSsolutionDeployment",
             "apiVersion": "2019-10-01",
-            "resourceGroup": "[split(variables('omsWorkspaceId'),'/')[4]]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
             "properties": {
                 "mode": "Incremental",
+                "type": "Microsoft.Resources/deployments",
+                "name": "OMSsolutionDeployment",
+                "apiVersion": "2019-10-01",
+                "resourceGroup": "[split(variables('omsWorkspaceId'),'/')[4]]",
                 "template": {
                     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {},
-                    "variables": {},
                     "resources": [
                         {
                             "apiVersion": "2015-11-01-preview",
@@ -403,8 +433,6 @@
                 "template": {
                     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {},
-                    "variables": {},
                     "resources": [
                         {
                             "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
@@ -425,44 +453,60 @@
             ]
         },
         {
-            "apiVersion": "2019-09-01",
-            "name": "[parameters('vnetName')]",
+            "condition": "[parameters('doRoleAssignment')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "VNet",
+            "apiVersion": "2019-10-01",
             "resourceGroup": "[parameters('resourceGroupName')]",
-            "type": "Microsoft.Network/virtualNetworks",
-            "location": "[parameters('location')]",
             "properties": {
-                "subnets": [
-                    {
-                        "name": "default",
-                        "properties": {
-                            "addressPrefix": "10.240.0.0/16"
-                        }
-                    },
-                    {
-                        "name": "virtual-node-aci",
-                        "properties": {
-                            "addressPrefix": "10.241.0.0/16",
-                            "delegations": [
-                                {
-                                    "name": "aciDelegation",
-                                    "properties": {
-                                        "serviceName": "Microsoft.ContainerInstance/containerGroups",
-                                        "actions": [
-                                            "Microsoft.Network/virtualNetworks/subnets/action"
-                                        ]
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "apiVersion": "2019-09-01",
+                            "name": "[parameters('vnetName')]",
+                            "resourceGroup": "[parameters('resourceGroupName')]",
+                            "type": "Microsoft.Network/virtualNetworks",
+                            "location": "[parameters('location')]",
+                            "properties": {
+                                "subnets": [
+                                    {
+                                        "name": "default",
+                                        "properties": {
+                                            "addressPrefix": "10.240.0.0/16"
+                                        }
+                                    },
+                                    {
+                                        "name": "virtual-node-aci",
+                                        "properties": {
+                                            "addressPrefix": "10.241.0.0/16",
+                                            "delegations": [
+                                                {
+                                                    "name": "aciDelegation",
+                                                    "properties": {
+                                                        "serviceName": "Microsoft.ContainerInstance/containerGroups",
+                                                        "actions": [
+                                                            "Microsoft.Network/virtualNetworks/subnets/action"
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
                                     }
+                                ],
+                                "addressSpace": {
+                                    "addressPrefixes": [
+                                        "10.0.0.0/8"
+                                    ]
                                 }
-                            ]
+                            },
+                            "tags": {}
                         }
-                    }
-                ],
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "10.0.0.0/8"
                     ]
                 }
-            },
-            "tags": {}
+            }
         },
         {
             "condition": "[parameters('doRoleAssignment')]",
@@ -475,8 +519,6 @@
                 "template": {
                     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {},
-                    "variables": {},
                     "resources": [
                         {
                             "type": "Microsoft.Network/virtualNetworks/subnets/providers/roleAssignments",
@@ -507,8 +549,6 @@
                 "template": {
                     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {},
-                    "variables": {},
                     "resources": [
                         {
                             "type": "Microsoft.Network/virtualNetworks/subnets/providers/roleAssignments",
@@ -530,72 +570,132 @@
         },
         {
             "condition": "[parameters('doRoleAssignment')]",
-            "type": "Microsoft.Authorization/roleAssignments",
-            "apiVersion": "2018-09-01-preview",
-            "name": "[guid(parameters('uniqueId'), 'Managed Identity Operator')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "ManagedIdOperatorAssignment",
+            "apiVersion": "2019-10-01",
+            "resourceGroup": "[parameters('resourceGroupName')]",
             "properties": {
                 "mode": "Incremental",
-                "roleDefinitionId": "[variables('ManagedIdOperator')]",
-                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
-                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',variables('MCResourceGroup'))]"
-            },
-            "dependsOn": [
-               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
-            ]
-        },
-        {
-            "condition": "[parameters('doRoleAssignment')]",
-            "type": "Microsoft.Authorization/roleAssignments",
-            "apiVersion": "2018-09-01-preview",
-            "name": "[guid(parameters('uniqueId'), 'Virtual Machine Contributor')]",
-            "properties": {
-                "mode": "Incremental",
-                "roleDefinitionId": "[variables('VMContributor')]",
-                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
-                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',variables('MCResourceGroup'))]"
-            },
-            "dependsOn": [
-               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
-            ]
-        },
-        {
-            "condition": "[parameters('doRoleAssignment')]",
-            "type": "Microsoft.Authorization/roleAssignments",
-            "apiVersion": "2018-09-01-preview",
-            "name": "[guid(parameters('uniqueId'), parameters('keyVaultName'))]",
-            "properties": {
-                "mode": "Incremental",
-                "roleDefinitionId": "[variables('Reader')]",
-                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
-                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'),'/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
-            },
-            "dependsOn": [
-               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
-            ]
-        },
-        {
-            "condition": "[parameters('doRoleAssignment')]",
-            "name": "[concat(parameters('keyVaultName'),'/add')]",
-            "type": "Microsoft.KeyVault/vaults/accessPolicies",
-            "apiVersion": "2019-09-01",
-            "properties": {
-                "accessPolicies": [
-                {
-                    "tenantId": "[subscription().tenantId]",
-                    "objectId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
-                    "permissions": {
-                    "keys": [
-                        "get"
-                    ],
-                    "secrets": [
-                        "get"
-                    ],
-                    "certificates": [
-                        "get"
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2018-09-01-preview",
+                            "name": "[guid(parameters('uniqueId'), 'Managed Identity Operator')]",
+                            "properties": {
+                                "mode": "Incremental",
+                                "roleDefinitionId": "[variables('ManagedIdOperator')]",
+                                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
+                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',variables('MCResourceGroup'))]"
+                            }
+                        }
                     ]
-                    }
                 }
-                ]
+            },
+            "dependsOn": [
+               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
+            ]
+        },
+        {
+            "condition": "[parameters('doRoleAssignment')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "VMContributorAssignment",
+            "apiVersion": "2019-10-01",
+            "resourceGroup": "[parameters('resourceGroupName')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2018-09-01-preview",
+                            "name": "[guid(parameters('uniqueId'), 'Virtual Machine Contributor')]",
+                            "properties": {
+                                "mode": "Incremental",
+                                "roleDefinitionId": "[variables('VMContributor')]",
+                                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
+                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',variables('MCResourceGroup'))]"
+                            }
+                         }
+                    ]
+                }
+            },
+            "dependsOn": [
+               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
+            ]
+        },
+        {
+            "condition": "[parameters('doRoleAssignment')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "KeyvaultRoleAssignment",
+            "apiVersion": "2019-10-01",
+            "resourceGroup": "[parameters('resourceGroupName')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2018-09-01-preview",
+                            "name": "[guid(parameters('uniqueId'), parameters('keyVaultName'))]",
+                            "properties": {
+                                "mode": "Incremental",
+                                "roleDefinitionId": "[variables('Reader')]",
+                                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
+                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'),'/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+                            }
+                         }
+                    ]
+                }
+            },
+            "dependsOn": [
+               "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterName'))]"
+            ]
+        },
+        {
+            "condition": "[parameters('doRoleAssignment')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "KeyvaultAccessPolicy",
+            "apiVersion": "2019-10-01",
+            "resourceGroup": "[parameters('keyVaultResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "name": "[concat(parameters('keyVaultName'),'/add')]",
+                            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+                            "apiVersion": "2019-09-01",
+                            "properties": {
+                                "accessPolicies": [
+                                {
+                                    "tenantId": "[subscription().tenantId]",
+                                    "objectId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
+                                    "permissions": {
+                                    "keys": [
+                                        "get"
+                                    ],
+                                    "secrets": [
+                                        "get"
+                                    ],
+                                    "certificates": [
+                                        "get"
+                                    ]
+                                    }
+                                }
+                                ]
+                            }
+                        }
+                    ]
+                }
             }
         }
     ],
