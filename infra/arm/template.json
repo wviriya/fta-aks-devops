@@ -129,12 +129,14 @@
         },
         "workspaceRegion": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
                 "description": "Specify the region for your OMS workspace."
             }
         },
         "omsResourceGroup": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
                 "description": "Specify the name for your OMS workspace."
             }
@@ -375,7 +377,7 @@
                         {
                             "apiVersion": "2018-09-01-preview",
                             "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
-                            "name": "[concat(parameters('acrName'), '/Microsoft.Authorization/',parameters('acrRAguid'))]",
+                            "name": "[concat(parameters('acrName'), '/Microsoft.Authorization/',guid(parameters('uniqueId'),'ConnectAKStoACR'))]",
                             "properties": {
                                 "mode": "Incremental",
                                 "principalId": "[reference(parameters('clusterName'), '2020-03-01').identityProfile.kubeletidentity.objectId]",
@@ -405,7 +407,7 @@
                         {
                             "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
                             "apiVersion": "2018-01-01-preview",
-                            "name": "[concat(parameters('clusterName'), '/Microsoft.Authorization/',parameters('omsRAguid'))]",
+                            "name": "[concat(parameters('clusterName'), '/Microsoft.Authorization/',guid(parameters('uniqueId'),'ClusterMonitoringRoleAssigment'))]",
                             "properties": {
                                 "mode": "Incremental",
                                 "roleDefinitionId": "[variables('MonitoringPublisher')]",
@@ -476,7 +478,7 @@
                         {
                             "type": "Microsoft.Network/virtualNetworks/subnets/providers/roleAssignments",
                             "apiVersion": "2017-05-01",
-                            "name": "[concat(parameters('vnetName'),'/default/Microsoft.Authorization/',parameters('defualtSubnetRAguid'))]",
+                            "name": "[concat(parameters('vnetName'),'/default/Microsoft.Authorization/',guid(parameters('uniqueId'),'ClusterSubnetRoleAssignmentDeployment'))]",
                             "properties": {
                                 "mode": "Incremental",
                                 "roleDefinitionId": "[variables('NetworkContributor')]",
@@ -508,7 +510,7 @@
                         {
                             "type": "Microsoft.Network/virtualNetworks/subnets/providers/roleAssignments",
                             "apiVersion": "2017-05-01",
-                            "name": "[concat(parameters('vnetName'),'/virtual-node-aci/Microsoft.Authorization/',parameters('aciSubnetRAguid'))]",
+                            "name": "[concat(parameters('vnetName'),'/virtual-node-aci/Microsoft.Authorization/',guid(parameters('uniqueId'),'AciSubnetRoleAssignmentDeployment'))]",
                             "properties": {
                                 "mode": "Incremental",
                                 "roleDefinitionId": "[variables('NetworkContributor')]",
