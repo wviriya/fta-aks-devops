@@ -3,10 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "clusterName": {
-            "value": "aksdevops"
+            "value": "aksninja"
         },
         "location": {
-            "value": "southeastasia"
+            "value": "australiaeast"
         },
         "kubernetesVersion": {
             "value": "1.16.8"

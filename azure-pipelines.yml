@@ -33,7 +33,7 @@ variables:
 
   # to deploy infrastructure
   - name: isClusterConfig
-    value: false
+    value: true
 
   # deployWith options 'arm','terraform','ansible'
   - name: deployWith
