@@ -129,7 +129,7 @@
         },
         "omsResourceGroup": {
             "type": "string",
-            "defaultValue": "[resourceGroup().name]",
+            "defaultValue": "",
             "metadata": {
                 "description": "Specify the name for your OMS workspace."
             }
@@ -228,7 +228,8 @@
     },
     "variables": {
         "workspaceName": "[if(empty(parameters('workspaceName')),concat(parameters('clusterName'),'Workspace',guid(parameters('uniqueId'))),parameters('workspaceName'))]",
-        "omsWorkspaceId": "[resourceId(parameters('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]",
+        "omsResourceGroup": "[if(empty(parameters('omsResourceGroup')),resourceGroup().name,parameters('omsResourceGroup'))]",
+        "omsWorkspaceId": "[resourceId(variables('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]",
         "MCResourceGroup": "[concat('MC_',resourceGroup().name,'_',parameters('clusterName'),'_',parameters('location'))]",
         "Reader": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
         "MonitoringPublisher": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/3913510d-42f4-4e42-8a64-420c390055eb')]",
@@ -381,7 +382,7 @@
                 }
             },
             "dependsOn": [
-                "[resourceId(parameters('omsResourceGroup'),'Microsoft.OperationalInsights/workspaces',variables('workspaceName'))]"
+                "[resourceId(variables('omsResourceGroup'),'Microsoft.OperationalInsights/workspaces',variables('workspaceName'))]"
             ]
         },
         {
