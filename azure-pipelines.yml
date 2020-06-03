@@ -109,9 +109,10 @@ stages:
     steps:
     - task: AzureResourceManagerTemplateDeployment@3
       inputs:
-        deploymentScope: 'Subscription'
+        deploymentScope: 'Resource Group'
         azureResourceManagerConnection: 'Victor-DevOps'
         subscriptionId: '$(subscriptionId)'
+        resourceGroupName: '$(resourceGroup)'
         location: $(region)
         templateLocation: 'Linked artifact'
         csmFile: '$(System.DefaultWorkingDirectory)/infra/arm/template.json'
