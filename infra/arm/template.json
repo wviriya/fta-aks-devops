@@ -585,7 +585,7 @@
                                 "mode": "Incremental",
                                 "roleDefinitionId": "[variables('Reader')]",
                                 "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
-                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'),'/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'))]"
                             }
                          }
                     ]
