@@ -227,7 +227,7 @@
         }
     },
     "variables": {
-        "workspaceName": "[if(empty(parameters('workspaceName')),concat(parameters('clusterName'),'Workspace',guid(parameters('uniqueId'))),parameters('workspaceName'))]",
+        "workspaceName": "[if(empty(parameters('workspaceName')),concat(parameters('clusterName'),'Workspace',guid(resourceGroup().id,'omsworkspace')),parameters('workspaceName'))]",
         "omsWorkspaceId": "[resourceId(parameters('omsResourceGroup'),'microsoft.operationalinsights/workspaces',variables('workspaceName'))]",
         "MCResourceGroup": "[concat('MC_',resourceGroup().name,'_',parameters('clusterName'),'_',parameters('location'))]",
         "Reader": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
