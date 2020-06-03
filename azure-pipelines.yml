@@ -116,7 +116,7 @@ stages:
         templateLocation: 'Linked artifact'
         csmFile: '$(System.DefaultWorkingDirectory)/infra/arm/template.json'
         csmParametersFile: '$(System.DefaultWorkingDirectory)/infra/arm/parameters.json'
-        overrideParameters: '-clusterName $(clusterName) -resourceGroupName $(resourceGroup) -doRoleAssignment $(isInfraDeployment) -location $(region) -workspaceRegion $(region) -kubernetesVersion $(k8sVersion)'
+        overrideParameters: '-clusterName $(clusterName) -doRoleAssignment $(isInfraDeployment) -location $(region) -workspaceRegion $(region) -kubernetesVersion $(k8sVersion)'
         deploymentMode: 'Incremental'
 
   # Deploy with Terraform
