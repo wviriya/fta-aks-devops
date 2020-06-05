@@ -579,13 +579,12 @@
                     "resources": [
                         {
                             "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-                            "apiVersion": "2017-05-01",
-                            "name": "[guid(parameters('uniqueId'), parameters('keyVaultName'))]",
+                            "apiVersion": "2018-09-01-preview",
+                            "name": "[concat(parameters('keyVaultName'),'/Microsoft.Authorization/',guid(parameters('uniqueId'), parameters('keyVaultName')))]",
                             "properties": {
-                                "mode": "Incremental",
                                 "roleDefinitionId": "[variables('Reader')]",
-                                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
-                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'),'/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+                                "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]"
+                                //"scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'),'/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
                             }
                          }
                     ]
