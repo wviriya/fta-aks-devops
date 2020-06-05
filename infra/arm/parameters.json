@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "clusterName": {
-            "value": "aksninja"
+            "value": "devops-aks"
         },
         "location": {
             "value": "australiaeast"
@@ -42,7 +42,7 @@
             "value": "172.17.0.1/16"
         },
         "workspaceRegion": {
-            "value": "southeastasia"
+            "value": "australiaeast"
         },
         "aciConnectorLinuxEnabled": {
             "value": true

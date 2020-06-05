@@ -122,7 +122,7 @@
         },
         "workspaceRegion": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "[resourceGroup().location]",
             "metadata": {
                 "description": "Specify the region for your OMS workspace."
             }
@@ -333,12 +333,12 @@
                 "type": "SystemAssigned"
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/virtualNetworks/',parameters('vnetName'))]"
+                "[concat('Microsoft.Network/virtualNetworks/',parameters('vnetName'))]",
+                "OMSolutionDeployment"
             ]
         },
         {
-            "condition": "[not(equals(variables('workspaceName'),parameters('workspaceName')))]",
-            "apiVersion": "2015-11-01-preview",
+           "apiVersion": "2015-11-01-preview",
             "name": "[variables('workspaceName')]",
             "location": "[parameters('location')]",
             "type": "Microsoft.OperationalInsights/workspaces",
@@ -353,7 +353,7 @@
             "type": "Microsoft.Resources/deployments",
             "name": "OMSolutionDeployment",
             "apiVersion": "2017-05-10",
-            "resourceGroup": "[split(variables('omsWorkspaceId'),'/')[4]]",
+            "resourceGroup": "[parameters('omsResourceGroup')]",
             "properties": {
                 "mode": "Incremental",
                 "template": {
@@ -381,7 +381,7 @@
                 }
             },
             "dependsOn": [
-                "[resourceId(parameters('omsResourceGroup'),'Microsoft.OperationalInsights/workspaces',variables('workspaceName'))]"
+                "[resourceId('Microsoft.OperationalInsights/workspaces',variables('workspaceName'))]"
             ]
         },
         {
@@ -578,14 +578,14 @@
                     "contentVersion": "1.0.0.0",
                     "resources": [
                         {
-                            "type": "Microsoft.Authorization/roleAssignments",
+                            "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
                             "apiVersion": "2018-09-01-preview",
                             "name": "[guid(parameters('uniqueId'), parameters('keyVaultName'))]",
                             "properties": {
                                 "mode": "Incremental",
                                 "roleDefinitionId": "[variables('Reader')]",
                                 "principalId": "[reference(parameters('clusterName')).identityProfile.kubeletidentity.objectId]",
-                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'))]"
+                                "scope": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',parameters('keyVaultResourceGroup'),'/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
                             }
                          }
                     ]
