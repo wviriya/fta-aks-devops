@@ -578,7 +578,7 @@
                     "contentVersion": "1.0.0.0",
                     "resources": [
                         {
-                            "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
+                            "type": "Microsoft.KeyVault/vaults",
                             "apiVersion": "2018-09-01-preview",
                             "name": "[guid(parameters('uniqueId'), parameters('keyVaultName'))]",
                             "properties": {
