@@ -578,8 +578,8 @@
                     "contentVersion": "1.0.0.0",
                     "resources": [
                         {
-                            "type": "Microsoft.KeyVault/vaults",
-                            "apiVersion": "2018-09-01-preview",
+                            "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
+                            "apiVersion": "2017-05-01",
                             "name": "[guid(parameters('uniqueId'), parameters('keyVaultName'))]",
                             "properties": {
                                 "mode": "Incremental",

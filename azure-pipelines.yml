@@ -12,10 +12,10 @@ variables:
   - group: deploymentOptions
  
   - name: resourceGroup
-    value: 'aksdevops2-rg'
+    value: 'aksdevops3-rg'
 
   - name: clusterName
-    value: 'aksdevops2'
+    value: 'aksdevops3'
 
   - name:  region
     value: 'australiaeast'
