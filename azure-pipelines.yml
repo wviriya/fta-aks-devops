@@ -25,7 +25,7 @@ variables:
 
   # to deploy application
   - name: isAppDeployment
-    value: true
+    value: false
 
   # to deploy infrastructure
   - name: isInfraDeployment

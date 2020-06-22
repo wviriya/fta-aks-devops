@@ -37,6 +37,6 @@ properties:
     type: Public
     ports:
     - protocol: tcp
-      port: 80
+      port: 3000
 tags: null
 type: Microsoft.ContainerInstance/containerGroups
