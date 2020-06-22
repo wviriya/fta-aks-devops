@@ -1,0 +1,39 @@
+- hosts: localhost
+
+  vars:
+    resource_group: __resourceGroup__
+    location: __region__
+    aks_name: __clusterName__
+    username: __user__
+    ssh_key: __sshkey__
+    client_id: __aksClientId__
+    client_secret: __aksClientSecret__
+    aks_version: __k8sVersion__
+
+  tasks:
+    - name: Create resource group
+      azure_rm_resourcegroup:
+        name: "{{ resource_group }}"
+        location: "{{ location }}"
+
+    - name: Create a managed AKS cluster
+      ignore_errors: yes
+      azure_rm_aks:
+        name: "{{ aks_name }}"
+        location: "{{ location }}"
+        resource_group: "{{ resource_group }}"
+        dns_prefix: "{{ aks_name }}"
+        enable_rbac: yes
+        kubernetes_version: "{{aks_version}}"
+        linux_profile:
+          admin_username: "{{ username }}"
+          ssh_key: "{{ ssh_key }}"
+        service_principal:
+          client_id: "{{ client_id }}"
+          client_secret: "{{ client_secret }}"
+        agent_pool_profiles:
+          - name: default
+            count: 2
+            vm_size: Standard_D2_v2
+        tags:
+          Environment: Production

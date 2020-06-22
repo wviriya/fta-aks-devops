@@ -1,0 +1,42 @@
+apiVersion: 2018-10-01
+location: australiaeast
+name: conferenceApps
+
+properties:
+  imageRegistryCredentials:
+  - server: __login-server__
+    username: __acr-pull-user__
+    password: __acr-pull-password__
+  containers:
+  - name: web
+    properties:
+      environmentVariables:
+        - name: CONTENT_API_URL
+          value: http://127.0.0.1:3001    #change this to your API ip address.
+      image: azninja.azurecr.io/web:latest
+      resources:
+        requests:
+          cpu: 1
+          memoryInGb: 1.5
+      ports:
+      - port: 80
+      - port: 443
+  - name: api
+    properties:
+      image: azninja.azurecr.io/api:latest
+      resources:
+        requests:
+          cpu: 1
+          memoryInGb: 1.5
+      ports:
+      - port: 3001
+  osType: Linux
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: tcp
+      port: 80
+    - protocol: tcp
+      port: 443
+tags: null
+type: Microsoft.ContainerInstance/containerGroups

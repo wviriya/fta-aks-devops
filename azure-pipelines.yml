@@ -1,0 +1,344 @@
+# Deploy to Azure Kubernetes Service
+# Build and push image to Azure Container Registry; Deploy to Azure Kubernetes Service
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- none
+
+resources:
+- repo: self
+
+variables:
+  - group: deploymentOptions
+ 
+  - name: resourceGroup
+    value: 'akscluster-rg'
+
+  - name: clusterName
+    value: 'akscluster'
+
+  - name:  region
+    value: 'australiaeast'
+
+  - name:  k8sVersion
+    value: '1.16.8'
+
+  # to deploy application
+  - name: isAppDeployment
+    value: true
+
+  # to deploy infrastructure
+  - name: isInfraDeployment
+    value: false
+
+  # to deploy infrastructure
+  - name: isClusterConfig
+    value: false
+
+  # deployWith options 'arm','terraform','ansible'
+  - name: deployWith
+    value: 'arm'
+
+  # Agent VM image name
+  - name: vmImageName
+    value: 'ubuntu-latest'
+
+pool:
+  vmImage: $(vmImageName)
+
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: BuildContainer
+    displayName: Build container image
+    condition: eq(variables.isAppDeployment,true)
+    steps:
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        containerRegistry: '$(acrName)'
+        repository: 'web'
+        command: 'buildAndPush'
+        Dockerfile: 'apps/web/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        containerRegistry: '$(acrName)'
+        repository: 'api'
+        command: 'buildAndPush'
+        Dockerfile: 'apps/api/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
+
+    - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+      displayName: 'Replace tokens in values.yaml'
+      inputs:
+        rootDirectory: '$(System.DefaultWorkingDirectory)/charts'
+        targetFiles: '**/values.yaml'
+        escapeType: none
+        tokenPrefix: '__'
+        tokenSuffix: '__'
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        path: $(System.DefaultWorkingDirectory)
+        artifact: artifacts
+
+    - task: HelmInstaller@1
+      inputs:
+        helmVersionToInstall: 'latest'
+
+  # Deploy with ARM
+  - job: DeployWithARM
+    displayName: Deploy to Azure wiht ARM
+    condition: and(eq(variables.isInfraDeployment,true),eq(variables.deployWith,'arm'))
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      inputs:
+        deploymentScope: 'Resource Group'
+        azureResourceManagerConnection: '$(azureSubscriptionConnection)'
+        subscriptionId: '$(subscriptionId)'
+        resourceGroupName: '$(resourceGroup)'
+        location: $(region)
+        templateLocation: 'Linked artifact'
+        csmFile: '$(System.DefaultWorkingDirectory)/infra/arm/template.json'
+        csmParametersFile: '$(System.DefaultWorkingDirectory)/infra/arm/parameters.json'
+        overrideParameters: '-clusterName $(clusterName) -doRoleAssignment $(isInfraDeployment) -location $(region) -workspaceRegion $(region) -kubernetesVersion $(k8sVersion)'
+        deploymentMode: 'Incremental'
+
+  # Deploy with Terraform
+  - job: DeployWithTerraform
+    displayName: Deploy to Azure wiht Terraform
+    condition: and(eq(variables.isInfraDeployment,true),eq(variables.deployWith,'terraform'))
+    steps:
+    - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+      displayName: 'Replace tokens in **/*.tf'
+      inputs:
+        rootDirectory: '$(System.DefaultWorkingDirectory)/infra/terraform'
+        targetFiles: '**/*.tf'
+        escapeType: none
+        tokenPrefix: '__'
+        tokenSuffix: '__'
+
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
+      displayName: 'Terraform : azurerm init'
+      inputs:
+        workingDirectory: '$(System.DefaultWorkingDirectory)/infra/terraform'
+        backendServiceArm: '$(azureSubscriptionConnection)'
+        backendAzureRmResourceGroupName: 'terraform_rg'
+        backendAzureRmStorageAccountName: wviriyatfstate
+        backendAzureRmContainerName: tfstate
+        backendAzureRmKey: terraform.tfstate
+
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
+      displayName: 'Terraform : azurerm plan'
+      inputs:
+        command: plan
+        workingDirectory: '$(System.DefaultWorkingDirectory)/infra/terraform'
+        environmentServiceNameAzureRM: '$(azureSubscriptionConnection)'
+        backendServiceArm: '$(azureSubscriptionConnection)'
+        backendAzureRmResourceGroupName: 'terraform_rg'
+        backendAzureRmStorageAccountName: wviriyatfstate
+        backendAzureRmContainerName: tfstate
+        backendAzureRmKey: terraform.tfstate
+        continueOnError: true
+    
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV1@0
+      displayName: 'Terraform : azurerm apply'
+      inputs:
+        command: apply
+        workingDirectory: '$(System.DefaultWorkingDirectory)/infra/terraform'
+        commandOptions: '-auto-approve'
+        environmentServiceNameAzureRM: '$(azureSubscriptionConnection)'
+        backendServiceArm: '$(azureSubscriptionConnection)'
+        backendAzureRmResourceGroupName: 'terraform_rg'
+        backendAzureRmStorageAccountName: wviriyatfstate
+        backendAzureRmContainerName: tfstate
+        backendAzureRmKey: terraform.tfstate
+      
+  # Deploy with Ansible
+  - job: DeployWithAnsible
+    displayName: Deploy to Azure wiht Ansible
+    condition: and(eq(variables.isInfraDeployment,true),eq(variables.deployWith,'ansible'))
+    steps:
+    - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+      displayName: 'Replace tokens in **/*.yml'
+      inputs:
+        rootDirectory: '$(System.DefaultWorkingDirectory)/infra/ansible'
+        targetFiles: '**/*.yml'
+        tokenPrefix: '__'
+        tokenSuffix: '__'
+    
+    - task: ms-vscs-rm.vss-services-ansible.ansible-task.Ansible@0
+      displayName: 'Run playbook'
+      inputs:
+        ansibleInterface: remoteMachine
+        connectionOverSsh: ansiblevm
+        playbookRootRemoteMachine: '$(System.DefaultWorkingDirectory)/ansible'
+        playbookPathLinkedArtifactOnRemoteMachine: 'azure_create_aks.yml'
+        playbookPathOnAgentMachine: '$(System.DefaultWorkingDirectory)/infra/ansible/azure_create_aks.yml'
+        inventoriesRemoteMachine: hostList
+        inventoryHostListRemoteMachine: wviriyaansible.australiaeast.cloudapp.azure.com
+        args: '-vvv'
+        failOnStdErr: false
+  
+# Configure New Cluster
+- stage: Config
+  displayName: Configure new AKS Cluster
+  condition: eq(variables.isClusterConfig,true)
+  dependsOn: Build
+  jobs:
+  - job: ConfigCluster
+    steps:      
+    - task: KubectlInstaller@0
+      inputs:
+        kubectlVersion: 'latest'
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: '$(azureSubscriptionConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'scriptPath'
+        scriptPath: '$(System.DefaultWorkingDirectory)/infra/scripts/cluster_config.sh'
+        arguments: '$(subscriptionId) $(resourceGroup) $(clusterName)'
+        addSpnToEnvironment: true
+
+    # - task: HelmDeploy@0
+    #   displayName: Deploy Nginx
+    #   inputs:
+    #     connectionType: 'Azure Resource Manager'
+    #     azureSubscription: '$(azureSubscriptionConnection)'
+    #     azureResourceGroup: '$(resourceGroup)'
+    #     kubernetesCluster: '$(clusterName)'
+    #     namespace: 'ingress-nginx'
+    #     command: 'upgrade'
+    #     chartType: 'FilePath'
+    #     chartPath: '$(System.DefaultworkingDirectory)/infra/ingress/charts/ingress-nginx'
+    #     releaseName: 'ingress-nginx'
+        
+- stage: default
+  displayName: Deploy to test
+  dependsOn: Config
+  condition: eq(variables.isAppDeployment,true)
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy stage
+    environment: '$(clusterName)-default'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: HelmDeploy@0
+            displayName: Deploy Web
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: '$(azureSubscriptionConnection)'
+              azureResourceGroup: '$(resourceGroup)'
+              kubernetesCluster: '$(clusterName)'
+              namespace: 'default'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+              releaseName: 'web'
+              waitForExecution: false
+
+          - task: HelmDeploy@0
+            displayName: Deploy API
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: '$(azureSubscriptionConnection)'
+              azureResourceGroup: '$(resourceGroup)'
+              kubernetesCluster: '$(clusterName)'
+              namespace: 'default'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
+              releaseName: 'api'
+              waitForExecution: false
+       
+# - stage: uat
+#   displayName: Deploy to uat
+#   dependsOn: test
+#   condition: and(succeeded(),eq(variables.isAppDeployment,true))
+#   jobs:
+#   - deployment: Deploy
+#     displayName: Deploy stage
+#     environment: 'uat'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: HelmDeploy@0
+#             displayName: Deploy Web
+#             inputs:
+#               connectionType: 'Azure Resource Manager'
+#               azureSubscription: '$(azureSubscriptionConnection)'
+#               azureResourceGroup: '$(resourceGroup)'
+#               kubernetesCluster: '$(clusterName)'
+#               namespace: '$(Environment.Name)'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+#               releaseName: 'web-$(Environment.Name)'
+#               waitForExecution: false
+
+#           - task: HelmDeploy@0
+#             displayName: Deploy API
+#             inputs:
+#               connectionType: 'Azure Resource Manager'
+#               azureSubscription: '$(azureSubscriptionConnection)'
+#               azureResourceGroup: '$(resourceGroup)'
+#               kubernetesCluster: '$(clusterName)'
+#               namespace: '$(Environment.Name)'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
+#               releaseName: 'api-$(Environment.Name)'
+#               waitForExecution: false
+
+# - stage: prod
+#   displayName: Deploy to prod
+#   dependsOn: uat
+#   condition: and(succeeded(),eq(variables.isAppDeployment,true))
+#   jobs:
+#   - deployment: Deploy
+#     displayName: Deploy stage
+#     environment: 'prod'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: HelmDeploy@0
+#             displayName: Deploy Web
+#             inputs:
+#               connectionType: 'Azure Resource Manager'
+#               azureSubscription: '$(azureSubscriptionConnection)'
+#               azureResourceGroup: '$(resourceGroup)'
+#               kubernetesCluster: '$(clusterName)'
+#               namespace: '$(Environment.Name)'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(Pipeline.Workspace)/artifacts/charts/web'
+#               releaseName: 'web-$(Environment.Name)'
+#               waitForExecution: false
+              
+#           - task: HelmDeploy@0
+#             displayName: Deploy API
+#             inputs:
+#               connectionType: 'Azure Resource Manager'
+#               azureSubscription: '$(azureSubscriptionConnection)'
+#               azureResourceGroup: '$(resourceGroup)'
+#               kubernetesCluster: '$(clusterName)'
+#               namespace: '$(Environment.Name)'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(Pipeline.Workspace)/artifacts/charts/api'
+#               releaseName: 'api-$(Environment.Name)'
+#               waitForExecution: false
+            
